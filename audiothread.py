@@ -14,8 +14,7 @@ The smoothed file will retain frequency characteristics and then will
 be playable with this (chunk length 2048)
 
 """
-#from __future__ import division, print_function
-import queue  # Python 3.x
+import queue
 import sys
 import threading
 import numpy as np
@@ -64,10 +63,7 @@ class AudioHandler(threading.Thread):
                 while self.active:
                     data = self.getblock()
                     self.q.put(data, timeout=timeout)
-                self.event.wait()  # Wait until playback is finished
-
-        except KeyboardInterrupt:
-            print("Interrupted")
+                #self.event.wait()
         except queue.Full:
             # A timeout occured, i.e. there was an error in the callback
             print("Queue Full")
@@ -88,8 +84,6 @@ class AudioHandler(threading.Thread):
         self.active = False
 
     def callback(self, outdata, frames, time, status):
-        self.proccount += 1
-        #print("Callback" + " " + str(self.proccount))
         assert frames == self.settings['blocksize']
         if status.output_underflow:
             print('Output underflow: increase blocksize?', file=sys.stderr)

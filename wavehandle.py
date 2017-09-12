@@ -1,4 +1,4 @@
-import numpy as np
+#!/usr/bin/env python3
 import struct
 
 class WaveHandler():

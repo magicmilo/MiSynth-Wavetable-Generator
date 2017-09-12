@@ -5,18 +5,11 @@
 #Synth plays back 2048 samples at frequency of note
 #Effective sample rate is 901,120Hz @ 440Hz
 
-import math
-import struct
-import os
 import wave
 import wx
 import audiothread
 import wavehandle
 import sdisp
-import queue
-import sys
-import threading
-import numpy as np
 
 class MyFrame(wx.Frame):
     def __init__(self, parent, title, wavehandle):
@@ -32,14 +25,11 @@ class MyFrame(wx.Frame):
         menu.Append(wx.ID_OPEN, "Open\tAlt-O", "Open Wave")
         menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit")
 
-        # bind the menu event to an event handler
+        # bind the menu event s
         self.Bind(wx.EVT_MENU, self.OnOpenButton, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.OnQuitButton, id=wx.ID_EXIT)
-
-        # and put the menu on the menubar
         menuBar.Append(menu, "&Actions")
         self.SetMenuBar(menuBar)
-        #self.CreateStatusBar()
 
         self.wavepanel = WavePanel(self, self.getscale, self.setsector)
         self.wavepanel.SetBackgroundColour(wx.Colour(32,55,91))
@@ -55,7 +45,7 @@ class MyFrame(wx.Frame):
                                        style=wx.ALIGN_LEFT)
         self.timestamp.SetForegroundColour((217, 66, 244))
 
-        # Now create the Panel to put the other controls on.
+
         btnOpen = wx.Button(self.buttonpanel, wx.ID_OPEN, "Open",
                             pos=(2, 0), size=(80, 40))
         btnExport = wx.Button(self.buttonpanel, -1, "Export",
@@ -125,17 +115,11 @@ class MyFrame(wx.Frame):
                 self.DrawWave()
 
     def OnOpenButton(self, evt):
-        """Event handler for the button click."""
-        if self.contentNotSaved:
-            if wx.MessageBox("Current content has not been saved! Proceed?", "Please confirm",
-                             wx.ICON_QUESTION | wx.YES_NO, self) == wx.NO:
-                return
-        # otherwise ask the user what new file to open
+        #Open file
         with wx.FileDialog(self, "Open .wav file.", wildcard="WAV files (*.wav)|*.wav",
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
-            # Proceed loading the file chosen by the user
             pathname = fileDialog.GetPath()
             try:
                 with wave.open(pathname, 'r') as file:
