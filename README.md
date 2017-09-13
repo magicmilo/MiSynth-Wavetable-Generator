@@ -1,5 +1,5 @@
-# MiSynth-Wavetable-Generator
-Process, listen to and export wavetables for the MiSynth Project
+# MiSynth-Wavetable-Generator Python3
+Process, listen to and export wavetables for the MiSynth Project.
 Run from main.py.
 Input files are mono .wav uncompressed as high a sample rate as possible.
 

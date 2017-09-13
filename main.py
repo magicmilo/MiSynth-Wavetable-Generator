@@ -18,6 +18,7 @@ class MyFrame(wx.Frame):
 
         self.scale = 8
         self.shift = 0
+        self.drawcnt = 0
 
         # Create the menubar
         menuBar = wx.MenuBar()
@@ -36,15 +37,12 @@ class MyFrame(wx.Frame):
         self.buttonpanel = wx.Panel(self, -1, pos=(0, 512), size=(1024, 40))
         self.textpanel = sdisp.TextPanel(self)
 
-        totalseconds = self.wavehandle.gettotaltime()
-        shiftseconds = self.wavehandle.framestoseconds(self.shift)
         self.timestamp = wx.StaticText(self.wavepanel, -1,
-                                       ("Time: " + str(shiftseconds)
-                                        + "/" + str(totalseconds)),
+                                       ("Time: " + str(0.0)
+                                        + "/" + str(0.0)),
                                        pos=(2, 2),
                                        style=wx.ALIGN_LEFT)
         self.timestamp.SetForegroundColour((217, 66, 244))
-
 
         btnOpen = wx.Button(self.buttonpanel, wx.ID_OPEN, "Open",
                             pos=(2, 0), size=(80, 40))
@@ -69,7 +67,7 @@ class MyFrame(wx.Frame):
 
     def setsector(self, sector):
         self.quadrant = abs(sector)
-        self.DrawWave()
+        self.Refresh()
 
     def getscale(self):
         return self.scale
@@ -82,8 +80,32 @@ class MyFrame(wx.Frame):
         return sample
 
     def onPaint(self, event):
-        print("Drawing")
-        self.DrawWave()
+        self.drawcnt += 1
+        print("Drawing" + str(self.drawcnt))
+        dc = wx.PaintDC(self.wavepanel)
+        dc.Clear()
+        totalseconds = self.wavehandle.gettotaltime()
+        shiftseconds = self.wavehandle.framestoseconds(self.shift)
+        self.timestamp.SetLabel("Time: " + str(shiftseconds) + "/" + str(
+            totalseconds))
+        dc.SetBrush(wx.Brush(wx.Colour(16, 28, 45), wx.SOLID))
+        dc.DrawRectangle(256, 0, 512, 512)
+        # Centre Line
+        pointdata = self.wavehandle.getdrawpoints(self.shift)
+
+        for x in range(1, 1024):  # Ugly
+            if (x > 256) and (x < 768):
+                dc.SetPen(wx.Pen((0, 255, 242), 1, wx.PENSTYLE_SOLID))
+            else:
+                dc.SetPen(wx.Pen((183, 204, 163), 1, wx.PENSTYLE_SOLID))
+            dc.DrawLine(x - 1, pointdata[x - 1], x, pointdata[x])
+            #dc.DrawPoint(x, pointdata[x])
+            if (x == 256) or (x == 768):
+                dc.SetPen(wx.Pen((0, 0, 0), 1, wx.PENSTYLE_DOT))
+                dc.DrawLine(x, 0, x, 512)
+            if (x == 496) or (x == 528):
+                dc.SetPen(wx.Pen((0, 0, 0), 1, wx.PENSTYLE_DOT))
+                dc.DrawLine(x, 0, x, 512)
 
     def OnPlayButton(self, event):
         if self.btnPlay.GetValue():
@@ -104,7 +126,7 @@ class MyFrame(wx.Frame):
                 else:
                     if(self.scale < 2097151):
                         self.scale = self.scale << 1
-                self.DrawWave()
+                self.Refresh()
             else:
                 if event.GetWheelRotation() > 0:
                     if(self.shift > 0):
@@ -112,7 +134,7 @@ class MyFrame(wx.Frame):
                 else:
                     if (self.shift < 10000000):
                         self.shift += 2000
-                self.DrawWave()
+                self.Refresh()
 
     def OnOpenButton(self, evt):
         #Open file
@@ -124,7 +146,7 @@ class MyFrame(wx.Frame):
             try:
                 with wave.open(pathname, 'r') as file:
                     self.wavehandle.loadwave(file)
-                    self.DrawWave()
+                    self.Refresh()
                     self.fileloaded = True
             except IOError:
                 wx.LogError("Cannot open file '%s'." % pathname)
@@ -134,34 +156,6 @@ class MyFrame(wx.Frame):
 
     def OnQuitButton(self, evt):
         self.Close()
-
-    def DrawWave(self):
-        dc = wx.PaintDC(self.wavepanel)
-        dc.Clear()
-        totalseconds = self.wavehandle.gettotaltime()
-        shiftseconds = self.wavehandle.framestoseconds(self.shift)
-        self.timestamp.SetLabel("Time: " + str(shiftseconds) + "/" + str(
-                                           totalseconds))
-
-        dc.SetBrush(wx.Brush(wx.Colour(16,28,45), wx.SOLID))
-        dc.DrawRectangle(256, 0, 512, 512)
-        # Centre Line
-        pointdata = self.wavehandle.getdrawpoints(self.shift)
-
-        for x in range(1, 1024): #Ugly
-            if(x > 256) and (x < 768):
-                dc.SetPen(wx.Pen((0, 255, 242), 1, wx.PENSTYLE_SOLID))
-            else:
-                dc.SetPen(wx.Pen((183, 204, 163), 1, wx.PENSTYLE_SOLID))
-            dc.DrawLine(x-1, pointdata[x-1], x, pointdata[x])
-            #dc.DrawPoint(x, pointdata[x])
-            if(x == 256) or (x==768):
-                dc.SetPen(wx.Pen((0, 0, 0), 1, wx.PENSTYLE_DOT))
-                dc.DrawLine(x, 0, x, 512)
-            if(x == 496) or (x == 528):
-                dc.SetPen(wx.Pen((0, 0, 0), 1, wx.PENSTYLE_DOT))
-                dc.DrawLine(x, 0, x, 512)
-
 
 class WavePanel(wx.Panel): #just handles mouseover events
     def __init__(self, parent, getter, sender):
