@@ -2,7 +2,7 @@ import wx
 
 class TextPanel(wx.Panel):  # just handles mouseover events
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent, pos=(0, 552), size=(1024, 220))
+        wx.Panel.__init__(self, parent, pos=(0, 424), size=(1024, 200))
         self.SetBackgroundColour(wx.Colour(220, 220, 220))
 
         names = ["File", "Sample Rate", "Playback Frequency",

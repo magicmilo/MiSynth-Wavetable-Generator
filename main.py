@@ -5,6 +5,10 @@
 #Synth plays back 2048 samples at frequency of note
 #Effective sample rate is 901,120Hz @ 440Hz
 
+#CURRENTLY A DRAWING LOOP TO BE SOLVED, THANKS WX/PYTHON FOR YOUR
+#COMPLETE LACK OF TRANSPARENCY
+#ALWAYS USE TKINTER
+
 import wave
 import wx
 import audiothread
@@ -13,12 +17,13 @@ import sdisp
 
 class MyFrame(wx.Frame):
     def __init__(self, parent, title, wavehandle):
-        wx.Frame.__init__(self, parent, -1, title, size=(1024, 662))
+        wx.Frame.__init__(self, parent, -1, title, size=(1024, 624))
         self.wavehandle = wavehandle
 
         self.scale = 8
         self.shift = 0
         self.drawcnt = 0
+        self.scope = [0]
 
         # Create the menubar
         menuBar = wx.MenuBar()
@@ -34,7 +39,9 @@ class MyFrame(wx.Frame):
 
         self.wavepanel = WavePanel(self, self.getscale, self.setsector)
         self.wavepanel.SetBackgroundColour(wx.Colour(32,55,91))
-        self.buttonpanel = wx.Panel(self, -1, pos=(0, 512), size=(1024, 40))
+        self.scopepanel = ScopePanel(self)
+        self.scopepanel.SetBackgroundColour(wx.Colour(20,25,20))
+        self.buttonpanel = wx.Panel(self, -1, pos=(0, 384), size=(1024, 40))
         self.textpanel = sdisp.TextPanel(self)
 
         self.timestamp = wx.StaticText(self.wavepanel, -1,
@@ -81,7 +88,7 @@ class MyFrame(wx.Frame):
 
     def onPaint(self, event):
         self.drawcnt += 1
-        print("Drawing" + str(self.drawcnt))
+        #print("Drawing" + str(self.drawcnt))
         dc = wx.PaintDC(self.wavepanel)
         dc.Clear()
         totalseconds = self.wavehandle.gettotaltime()
@@ -89,7 +96,7 @@ class MyFrame(wx.Frame):
         self.timestamp.SetLabel("Time: " + str(shiftseconds) + "/" + str(
             totalseconds))
         dc.SetBrush(wx.Brush(wx.Colour(16, 28, 45), wx.SOLID))
-        dc.DrawRectangle(256, 0, 512, 512)
+        dc.DrawRectangle(256, 0, 512, 256)
         # Centre Line
         pointdata = self.wavehandle.getdrawpoints(self.shift)
 
@@ -102,16 +109,28 @@ class MyFrame(wx.Frame):
             #dc.DrawPoint(x, pointdata[x])
             if (x == 256) or (x == 768):
                 dc.SetPen(wx.Pen((0, 0, 0), 1, wx.PENSTYLE_DOT))
-                dc.DrawLine(x, 0, x, 512)
+                dc.DrawLine(x, 0, x, 256)
             if (x == 496) or (x == 528):
                 dc.SetPen(wx.Pen((0, 0, 0), 1, wx.PENSTYLE_DOT))
-                dc.DrawLine(x, 0, x, 512)
+                dc.DrawLine(x, 0, x, 256)
+        dc = wx.PaintDC(self.scopepanel)
+        dc.Clear()
+        dc.SetPen(wx.Pen((256,0,0), 1, wx.PENSTYLE_SOLID))
+        for x in range(0, 1024):
+            if len(self.scope) > 1:
+                p = self.scope[x % len(self.scope)] + 64
+            else:
+                p = 64
+            dc.DrawPoint(x, p)
+
 
     def OnPlayButton(self, event):
         if self.btnPlay.GetValue():
             self.audiohandle = audiothread.AudioHandler()
             if self.fileloaded:
                 self.audiohandle.setsample(self.getSample(self.quadrant), 2048)
+                self.scope = self.audiohandle.getscopesample()
+                print("sample length: " + str(len(self.scope)))
             self.audiohandle.start()
         else:
             self.audiohandle.stop()
@@ -135,6 +154,13 @@ class MyFrame(wx.Frame):
                     if (self.shift < 10000000):
                         self.shift += 2000
                 self.Refresh()
+        if self.scopepanel.mouseOver:
+            if event.GetWheelRotation() > 0:
+                self.audiohandle.setshift(1)
+            else:
+                self.audiohandle.setshift(-1)
+            self.scope = self.audiohandle.getscopesample()
+            self.Refresh()
 
     def OnOpenButton(self, evt):
         #Open file
@@ -159,7 +185,7 @@ class MyFrame(wx.Frame):
 
 class WavePanel(wx.Panel): #just handles mouseover events
     def __init__(self, parent, getter, sender):
-        wx.Panel.__init__(self, parent, pos=(0,0),size=(1024, 512))
+        wx.Panel.__init__(self, parent, pos=(0,0),size=(1024, 256))
         self.mouseOver = False
         self.ctrlDown = False
         self.Bind(wx.EVT_ENTER_WINDOW, self.onMouseOver)
@@ -191,6 +217,20 @@ class WavePanel(wx.Panel): #just handles mouseover events
         keycode = event.GetKeyCode()
         if keycode == wx.WXK_CONTROL:
             self.ctrlDown = False
+
+class ScopePanel(wx.Panel): #just handles mouseover events
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent, pos=(0, 256), size=(1024, 128))
+        self.mouseOver = False
+        self.Bind(wx.EVT_ENTER_WINDOW, self.onMouseOver)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.onMouseLeave)
+
+    def onMouseOver(self, event):
+        self.mouseOver = True
+
+    def onMouseLeave(self, event):
+        self.mouseOver = False
+
 
 class MyApp(wx.App):
     def OnInit(self):

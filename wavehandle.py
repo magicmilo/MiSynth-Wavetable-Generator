@@ -27,9 +27,9 @@ class WaveHandler():
             index = (x * 4) + datastart
             if(index < 0) or (index >= (len(self.audioData) - 1)) or\
                     (len(self.audioData) == 0):
-                pointlist.append(256)
+                pointlist.append(128)
             else:
-                pointlist.append((self.audioData[index]/128)+256)
+                pointlist.append((self.audioData[index]/256)+128)
         return pointlist
 
     def getaudiodata(self, datastart, scale, sector):

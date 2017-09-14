@@ -51,6 +51,7 @@ class AudioHandler(threading.Thread):
 
     def run(self):
         self.active = True
+        self.counter = self.shift
         try:
             #print(sd.query_devices())
             data = self.getblock()
@@ -70,6 +71,18 @@ class AudioHandler(threading.Thread):
         except Exception as e:
             print("Exception " + str(e))
         return
+
+    def getscopesample(self):
+        s = []
+        for i in range(self.shift, self.shift + self.chunklength):
+            s.append(self.sample[i] / 1024)
+        return s
+
+    def setshift(self, shift):
+        if((self.shift + shift) > 0) and ((self.shift + shift) < (self.shift + self.chunklength)):
+            self.shift += shift
+            self.counter = self.shift
+            print("Shift: " + str(self.shift))
 
     def setsample(self, sample, length):
         assert len(sample) == length
@@ -116,7 +129,7 @@ class AudioHandler(threading.Thread):
         for cnt in range(0, 2048):
             s = self.sample[int(self.counter)]
             self.counter += self.step
-            if self.counter >= (self.chunklength-1):
+            if self.counter >= (self.shift + self.chunklength - 1):
                 self.counter -= self.chunklength
             block.append(s)
         return block
